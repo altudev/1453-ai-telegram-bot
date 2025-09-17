@@ -17,7 +17,10 @@ const appConfigSchema = z.object({
   }),
   telegram: z.object({
     botToken: z.string().min(1),
-    chatIds: z.array(z.string().min(1)),
+    chatConfigs: z.array(z.object({
+      chatId: z.string().min(1),
+      topicId: z.number().optional(),
+    })),
   }),
   platforms: platformLinksSchema,
   server: z.object({
@@ -41,12 +44,24 @@ function parsePlatformLinks(platformLinksJson: string): PlatformLinks {
   }
 }
 
+function parseTelegramChatConfigs(chatConfigsJson: string) {
+  try {
+    const parsed = JSON.parse(chatConfigsJson);
+    return parsed.map((config: any) => ({
+      chatId: config.chatId,
+      topicId: config.topicId,
+    }));
+  } catch (error) {
+    throw new Error(`Invalid TELEGRAM_CHAT_CONFIGS format: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 export function loadConfig(): AppConfig {
   const requiredEnvVars = [
     'YOUTUBE_CHANNEL_ID',
     'YOUTUBE_API_KEY',
     'TELEGRAM_BOT_TOKEN',
-    'TELEGRAM_CHAT_IDS',
+    'TELEGRAM_CHAT_CONFIGS',
     'PLATFORM_LINKS',
     'PORT',
     'WEBHOOK_SECRET',
@@ -66,7 +81,7 @@ export function loadConfig(): AppConfig {
     },
     telegram: {
       botToken: process.env.TELEGRAM_BOT_TOKEN!,
-      chatIds: process.env.TELEGRAM_CHAT_IDS!.split(',').map(id => id.trim()),
+      chatConfigs: parseTelegramChatConfigs(process.env.TELEGRAM_CHAT_CONFIGS!),
     },
     platforms: parsePlatformLinks(process.env.PLATFORM_LINKS!),
     server: {

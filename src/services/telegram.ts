@@ -1,5 +1,5 @@
 import { Bot } from 'grammy';
-import type { NotificationResult, LivestreamNotification } from '../types';
+import type { NotificationResult, LivestreamNotification, TelegramChatConfig } from '../types';
 import { config } from '../config';
 import logger from '../utils/logger';
 import { youtubeService } from '../services/youtube';
@@ -26,32 +26,44 @@ export class TelegramService {
   async sendLivestreamNotification(notification: LivestreamNotification): Promise<NotificationResult[]> {
     const results: NotificationResult[] = [];
     
-    for (const chatId of config.telegram.chatIds) {
-      const result = await this.sendToChatWithRetry(chatId, notification);
+    for (const chatConfig of config.telegram.chatConfigs) {
+      const result = await this.sendToChatWithRetry(chatConfig, notification);
       results.push(result);
     }
 
     return results;
   }
 
-  private async sendToChatWithRetry(chatId: string, notification: LivestreamNotification): Promise<NotificationResult> {
+  private async sendToChatWithRetry(chatConfig: TelegramChatConfig, notification: LivestreamNotification): Promise<NotificationResult> {
     let lastError: Error | undefined;
     const timestamp = new Date().toISOString();
+    const { chatId, topicId } = chatConfig;
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
         const message = this.formatNotificationMessage(notification);
-        await this.bot.api.sendMessage(chatId, message, {
+        
+        // Prepare message options
+        const messageOptions: any = {
           parse_mode: 'HTML',
           link_preview_options: {
             is_disabled: false,
           },
-        });
+        };
+        
+        // Add message_thread_id if topicId is provided
+        if (topicId) {
+          messageOptions.message_thread_id = topicId;
+        }
+        
+        await this.bot.api.sendMessage(chatId, message, messageOptions);
 
-        logger.info(`Successfully sent notification to chat ${chatId} for video ${notification.video.id}`);
+        const location = topicId ? `chat ${chatId}, topic ${topicId}` : `chat ${chatId}`;
+        logger.info(`Successfully sent notification to ${location} for video ${notification.video.id}`);
         return {
           success: true,
           chatId,
+          topicId,
           timestamp,
         };
       } catch (error) {
@@ -59,16 +71,19 @@ export class TelegramService {
         
         if (attempt < this.MAX_RETRIES) {
           const delay = this.RETRY_DELAY_MS * attempt;
-          logger.warn(`Failed to send notification to chat ${chatId}. Retrying in ${delay}ms (attempt ${attempt}/${this.MAX_RETRIES})`);
+          const location = topicId ? `chat ${chatId}, topic ${topicId}` : `chat ${chatId}`;
+          logger.warn(`Failed to send notification to ${location}. Retrying in ${delay}ms (attempt ${attempt}/${this.MAX_RETRIES})`);
           await this.sleep(delay);
         }
       }
     }
 
-    logger.error(`Failed to send notification to chat ${chatId} after ${this.MAX_RETRIES} attempts:`, lastError);
+    const location = topicId ? `chat ${chatId}, topic ${topicId}` : `chat ${chatId}`;
+    logger.error(`Failed to send notification to ${location} after ${this.MAX_RETRIES} attempts:`, lastError);
     return {
       success: false,
       chatId,
+      topicId,
       error: lastError?.message || 'Unknown error',
       timestamp,
     };

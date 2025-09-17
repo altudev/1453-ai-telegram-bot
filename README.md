@@ -47,7 +47,7 @@ YOUTUBE_API_KEY=your_youtube_api_key_here
 
 # Telegram Configuration
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-TELEGRAM_CHAT_IDS=chat_id_1,chat_id_2,chat_id_3
+TELEGRAM_CHAT_CONFIGS=[{"chatId":"chat_id_1","topicId":1},{"chatId":"chat_id_2","topicId":2},{"chatId":"chat_id_3"}]
 
 # Platform Links (JSON format)
 PLATFORM_LINKS={"youtube":"https://youtube.com/@yourchannel","x":"https://x.com/yourusername","kick":"https://kick.com/yourusername","twitch":"https://twitch.tv/yourusername","instagram":"https://instagram.com/yourusername","linkedin":"https://linkedin.com/in/yourusername"}
@@ -95,7 +95,7 @@ docker run -d \
   -e YOUTUBE_CHANNEL_ID=your_channel_id \
   -e YOUTUBE_API_KEY=your_api_key \
   -e TELEGRAM_BOT_TOKEN=your_bot_token \
-  -e TELEGRAM_CHAT_IDS=your_chat_ids \
+  -e TELEGRAM_CHAT_CONFIGS='[{"chatId":"chat_id_1","topicId":1},{"chatId":"chat_id_2","topicId":2}]' \
   -e PLATFORM_LINKS='{"youtube":"https://youtube.com/@yourchannel","x":"https://x.com/yourusername","kick":"https://kick.com/yourusername","twitch":"https://twitch.tv/yourusername","instagram":"https://instagram.com/yourusername","linkedin":"https://linkedin.com/in/yourusername"}' \
   -e WEBHOOK_SECRET=your_webhook_secret \
   -e BASE_URL=https://yourdomain.com \
@@ -126,7 +126,7 @@ docker run -d \
 | `YOUTUBE_CHANNEL_ID` | The YouTube channel ID to monitor | Yes |
 | `YOUTUBE_API_KEY` | YouTube Data API key | Yes |
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token | Yes |
-| `TELEGRAM_CHAT_IDS` | Comma-separated list of Telegram chat IDs | Yes |
+| `TELEGRAM_CHAT_CONFIGS` | JSON array of chat configurations with optional topic IDs | Yes |
 | `PLATFORM_LINKS` | JSON string with platform links | Yes |
 | `PORT` | Port for the HTTP server | No (default: 3000) |
 | `WEBHOOK_SECRET` | Secret for verifying WebSub callbacks | Yes |
@@ -149,6 +149,29 @@ The `PLATFORM_LINKS` environment variable should be a JSON string with the follo
 }
 ```
 
+### Telegram Chat Configs Format
+
+The `TELEGRAM_CHAT_CONFIGS` environment variable should be a JSON array of chat configurations. Each configuration can optionally include a topic ID for sending messages to specific topics within a group:
+
+```json
+[
+  {
+    "chatId": "-1001234567890",
+    "topicId": 1
+  },
+  {
+    "chatId": "-1000987654321"
+  }
+]
+```
+
+- `chatId`: The Telegram chat ID (required)
+- `topicId`: The topic ID within the chat (optional). If not provided, messages will be sent to the main chat.
+
+To get chat and topic IDs:
+1. For regular channels/groups: Send a message to the chat and use `/getupdates` API or a bot like @JsonDumpBot to get the chat ID
+2. For topics in supergroups: Send a message to the topic and use a bot to get the message ID, which corresponds to the topic ID
+
 ## Monitoring and Logging
 
 - Logs are written to both console and files (`logs/error.log` and `logs/combined.log`)
@@ -165,7 +188,9 @@ The `PLATFORM_LINKS` environment variable should be a JSON string with the follo
 
 2. **Telegram notifications not sending**
    - Verify the bot token is correct
-   - Ensure the bot has permission to send messages to the specified chat IDs
+   - Ensure the bot has permission to send messages to the specified chat IDs and topics
+   - Check the `TELEGRAM_CHAT_CONFIGS` JSON format is valid
+   - Verify the bot is added to the chat and has appropriate permissions
    - Check the logs for error messages
 
 3. **Redis connection errors**

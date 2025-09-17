@@ -15,12 +15,14 @@
 - YouTube Data API key
 - Telegram bot token
 - YouTube channel ID
+- Telegram chat IDs and optional topic IDs
 
 ### Deployment Steps
 
 1. **Prepare Environment Variables**
    - Gather all required environment variables
    - Ensure they are properly formatted
+   - For `TELEGRAM_CHAT_CONFIGS`, use the JSON format with optional topic IDs
    - Test them locally before deployment
 
 2. **Deploy to Coolify**
@@ -108,11 +110,16 @@ Set up alerts for:
 - Invalid bot token
 - Bot doesn't have permission to send messages
 - Rate limiting by Telegram
+- Invalid chat or topic IDs
+- Incorrect `TELEGRAM_CHAT_CONFIGS` JSON format
 
 **Solutions:**
 - Verify bot token is correct
 - Ensure bot is added to the channel with appropriate permissions
 - Check for rate limiting and implement backoff
+- Verify chat and topic IDs are correct
+- Ensure `TELEGRAM_CHAT_CONFIGS` is valid JSON
+- Test with a simple message to verify connectivity
 
 #### 3. Redis Connection Errors
 

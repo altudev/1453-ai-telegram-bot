@@ -51,7 +51,7 @@ export interface AppConfig {
   };
   telegram: {
     botToken: string;
-    chatIds: string[];
+    chatConfigs: TelegramChatConfig[];
   };
   platforms: PlatformLinks;
   server: {
@@ -69,8 +69,14 @@ export interface AppConfig {
 export interface NotificationResult {
   success: boolean;
   chatId: string;
+  topicId?: number;
   error?: string;
   timestamp: string;
+}
+
+export interface TelegramChatConfig {
+  chatId: string;
+  topicId?: number;
 }
 
 export interface HealthStatus {

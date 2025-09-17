@@ -14,7 +14,7 @@ class Application {
       logger.info('Starting YouTube Livestream Telegram Notification Bot...');
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`YouTube Channel ID: ${config.youtube.channelId}`);
-      logger.info(`Telegram Chat IDs: ${config.telegram.chatIds.join(', ')}`);
+      logger.info(`Telegram Chat Configs: ${JSON.stringify(config.telegram.chatConfigs)}`);
 
       // Subscribe to WebSub
       await webSubHandler.subscribeToWebSub();

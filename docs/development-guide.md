@@ -34,7 +34,7 @@ bun install
 cp .env.example .env
 ```
 
-4. **Edit the `.env` file** with your configuration
+4. **Edit the `.env` file** with your configuration, including the new `TELEGRAM_CHAT_CONFIGS` format
 
 5. **Start Redis server**
 ```bash
